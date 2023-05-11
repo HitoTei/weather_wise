@@ -6,21 +6,23 @@ part of 'main.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$weatherHash() => r'd19a32bfc78011b7bb4dd74e34d672bb25ee3622';
+String _$weatherEntriesHash() => r'56d1f9ccedff9cf1420621b6b9cac9c9925070e3';
 
-/// See also [weather].
-@ProviderFor(weather)
-final weatherProvider = AutoDisposeFutureProvider<String>.internal(
-  weather,
-  name: r'weatherProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$weatherHash,
+/// See also [weatherEntries].
+@ProviderFor(weatherEntries)
+final weatherEntriesProvider =
+    AutoDisposeFutureProvider<List<WeatherEntry>>.internal(
+  weatherEntries,
+  name: r'weatherEntriesProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$weatherEntriesHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef WeatherRef = AutoDisposeFutureProviderRef<String>;
-String _$currentTimeHash() => r'b1b8bb48047629a597228bb123ca7c5fea4d08f9';
+typedef WeatherEntriesRef = AutoDisposeFutureProviderRef<List<WeatherEntry>>;
+String _$currentTimeHash() => r'c13bb665c45ad3637f16db2441bb7d38167ca2b1';
 
 /// See also [currentTime].
 @ProviderFor(currentTime)

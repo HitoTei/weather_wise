@@ -1,7 +1,12 @@
+import 'dart:convert';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:http/http.dart' as http;
+import 'package:weather_wise/weather_code.dart';
+import 'package:weather_wise/weather_entry.dart';
 
 part 'main.g.dart';
 
@@ -23,12 +28,25 @@ class MyApp extends StatelessWidget {
 }
 
 final url = Uri.parse(
-    'https://api.open-meteo.com/v1/forecast?latitude=36.20&longitude=140.10&hourly=temperature_2m');
+    'https://api.open-meteo.com/v1/forecast?latitude=36.20&longitude=140.10&hourly=temperature_2m,weathercode&past_days=7');
 
 @riverpod
-Future<String> weather(WeatherRef ref) async {
+Future<List<WeatherEntry>> weatherEntries(WeatherEntriesRef ref) async {
   final response = await http.get(url);
-  return response.body;
+  final json = jsonDecode(response.body);
+  final hourly = json['hourly'] as Map<String, dynamic>;
+  final times = hourly['time'] as List<dynamic>;
+  final temperatures = hourly['temperature_2m'] as List<dynamic>;
+  final weatherCodes = hourly['weathercode'] as List<dynamic>;
+  final entries = <WeatherEntry>[];
+  for (var i = 0; i < times.length; i++) {
+    entries.add(WeatherEntry(
+      time: times[i] as String,
+      temperature: temperatures[i] as double,
+      weatherCode: weatherCodes[i] as int,
+    ));
+  }
+  return entries;
 }
 
 @riverpod
@@ -38,7 +56,7 @@ String currentTime(CurrentTimeRef ref) {
 
 class _MyApp extends ConsumerWidget {
   void refresh(WidgetRef ref) {
-    ref.invalidate(weatherProvider);
+    ref.invalidate(weatherEntriesProvider);
     ref.invalidate(currentTimeProvider);
   }
 
@@ -58,7 +76,7 @@ class _MyApp extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: const [
           CurrentTimeWidget(),
-          WeatherWidget(),
+          Flexible(child: WeatherTimeLineWidget()),
         ],
       ),
     );
@@ -78,16 +96,94 @@ class CurrentTimeWidget extends ConsumerWidget {
   }
 }
 
-class WeatherWidget extends ConsumerWidget {
-  const WeatherWidget({super.key});
+class WeatherTimeLineWidget extends ConsumerWidget {
+  const WeatherTimeLineWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final weather = ref.watch(weatherProvider);
-    return weather.when(
-      data: (data) => Text(data),
+    final size = MediaQuery.of(context).size;
+    final aspectRatio = size.width / size.height;
+    final weatherEntries = ref.watch(weatherEntriesProvider);
+    return weatherEntries.when(
+      data: (data) {
+        return (aspectRatio > 16 / 9)
+            ? Row(
+                children: [
+                  Expanded(child: WeatherEntriesListWidget(data)),
+                  Expanded(child: WeatherChartWidget(data)),
+                ],
+              )
+            : Column(
+                children: [
+                  Expanded(child: WeatherEntriesListWidget(data)),
+                  Expanded(child: WeatherChartWidget(data)),
+                ],
+              );
+      },
       error: (error, stackTrace) => Text('Error: $error'),
       loading: () => const CircularProgressIndicator(),
+    );
+  }
+}
+
+class WeatherEntriesListWidget extends StatelessWidget {
+  const WeatherEntriesListWidget(this._weatherEntries, {super.key});
+
+  final List<WeatherEntry> _weatherEntries;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: _weatherEntries.length,
+      itemBuilder: (context, index) {
+        final entry = _weatherEntries[index];
+        return ListTile(
+          title: Text(entry.time),
+          subtitle: Text('${entry.temperature}°C'),
+          leading: Icon(weatherCodeToIcon(entry.weatherCode)),
+        );
+      },
+      separatorBuilder: (context, index) => const Divider(),
+    );
+  }
+}
+
+class WeatherChartWidget extends StatelessWidget {
+  const WeatherChartWidget(this._weatherEntries, {super.key});
+
+  final List<WeatherEntry> _weatherEntries;
+
+  @override
+  Widget build(BuildContext context) {
+    return LineChart(
+      LineChartData(
+          lineBarsData: [
+            LineChartBarData(
+              spots: _weatherEntries
+                  .map((entry) => FlSpot(
+                        _weatherEntries.indexOf(entry).toDouble(),
+                        entry.temperature,
+                      ))
+                  .toList(),
+            ),
+          ],
+          titlesData: FlTitlesData(
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (fl, meta) {
+                    final index = fl.toInt();
+                    final entry = _weatherEntries[index];
+                    if (index % 50 == 0) {
+                      return Text(entry.time.substring(5,10));
+                    } else {
+                      return const SizedBox();
+                    }
+                  }),
+            ),
+          )),
     );
   }
 }
