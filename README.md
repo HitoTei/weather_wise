@@ -1,16 +1,7 @@
 # weather_wise
 
-simple weather app
+[open meteo](https://open-meteo.com/) を利用して数日分の天気を取得して表示する。
 
-## Getting Started
+![image](https://github.com/HitoTei/weather_wise/assets/43402618/66b9acca-e087-4847-a4c5-e740d95dc3fb)
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+![image](https://github.com/HitoTei/weather_wise/assets/43402618/f61cf9e3-ea2c-450e-9336-b505baa73eb0)
